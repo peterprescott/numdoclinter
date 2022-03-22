@@ -8,24 +8,34 @@ import ast
 from typing import Union
 
 
-def get_func_name_list(filepath):
-    with open(filepath, "r") as file:
+def get_func_name_list(module_filepath, context):
+    with open(module_filepath, "r") as file:
         tree = ast.parse(file.read())
 
-    functions = [f for f in tree.body if isinstance(f, ast.FunctionDef)]
+    module = module_filepath.split('.')[0]
+
+    functions = [FunctionInfo(f, module, context) 
+            for f in tree.body if isinstance(f, ast.FunctionDef)]
     classes = [c for c in tree.body if isinstance(c, ast.ClassDef)]
-    methods = [f for c in classes for f in c.body if isinstance(f, ast.FunctionDef)]
+    methods = [FunctionInfo(f, module, context, c.name) 
+            for c in classes for f in c.body if isinstance(f, ast.FunctionDef)]
 
     functions.extend(methods)
 
-    return [FunctionInfo(f) for f in functions]
+    return functions
 
 
 class FunctionInfo:
-    def __init__(self, function_def: ast.FunctionDef):
+    def __init__(self, function_def: ast.FunctionDef, module:str,
+            context:str, class_name:str = None):
+
+        if class_name:
+            class_ = f'{class_name}::'
+        else:
+            class_ = ''
 
         self.ast = function_def
-        self.name = self.ast.name
+        self.name = f'{context}.{module}::{class_}{self.ast.name}'
         self.args = [a.arg for a in self.ast.args.args]
         self.annotations = [
             AnnotationInfo(a.annotation) for a in self.ast.args.args
