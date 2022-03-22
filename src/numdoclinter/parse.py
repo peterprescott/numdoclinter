@@ -7,6 +7,8 @@ expressions).
 import ast
 from typing import Union
 
+from sphinx.ext.napoleon import NumpyDocstring
+
 
 class FunctionInfo:
     def __init__(self, function_def: ast.FunctionDef, module:str,
@@ -53,6 +55,7 @@ class AnnotationInfo:
             self.txt = None
 
 
+
 class DocstringInfo:
     def __init__(self, raw_docstring:str):
         self.raw = raw_docstring
@@ -67,16 +70,26 @@ class DocstringInfo:
         assert self.description[0] != ':'
 
     def _get_parameters(self):
+        self.params = []
         self._param_section = [section for section 
                 in self.sphinx_sections 
                 if section.split(' ')[0]==':param']
-        if len(self._p0)==1:
+        if len(self._param_section)==1:
             self._param_lines = self._param_section[0].split('\n')
             self._odd = [line for i, line in
                     enumerate(self._param_lines) if i%2==1]
             self._even = [line for i, line in
                     enumerate(self._param_lines) if i%2==0]
-            self._pairs = zip(self._odd, self._even)
+            self._pairs = list(zip(self._even, self._odd))
+            for p in self._pairs:
+                name = p[1].split(' ')[1][:-1]
+                hint = p[1].split(' ')[-1]
+                desc = p[0].split(f'{name}: ')[-1]
+                self.params.append(
+                        {'name':name,
+                         'hint':hint,
+                         'desc':desc}
+                        )
 
     def _get_returns(self):
         self._returns = [section for section 
