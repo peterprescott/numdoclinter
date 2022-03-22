@@ -8,23 +8,6 @@ import ast
 from typing import Union
 
 
-def get_func_name_list(module_filepath, context):
-    with open(module_filepath, "r") as file:
-        tree = ast.parse(file.read())
-
-    module = module_filepath.split('.')[0]
-
-    functions = [FunctionInfo(f, module, context) 
-            for f in tree.body if isinstance(f, ast.FunctionDef)]
-    classes = [c for c in tree.body if isinstance(c, ast.ClassDef)]
-    methods = [FunctionInfo(f, module, context, c.name) 
-            for c in classes for f in c.body if isinstance(f, ast.FunctionDef)]
-
-    functions.extend(methods)
-
-    return functions
-
-
 class FunctionInfo:
     def __init__(self, function_def: ast.FunctionDef, module:str,
             context:str, class_name:str = None):
@@ -68,3 +51,35 @@ class AnnotationInfo:
                 self.txt = None
         except:
             self.txt = None
+
+
+class DocstringInfo:
+    def __init__(self, raw_docstring:str):
+        self.raw = raw_docstring
+        self.sphinx = NumpyDocstring(self.raw).lines()
+        self.sphinx_sections = '\n'.join(self.sphinx).split('\n\n')
+        self._get_description()
+        self._get_parameters()
+        self._get_returns()
+
+    def _get_description(self):
+        self.description = self.sphinx_sections[0]
+        assert self.description[0] != ':'
+
+    def _get_parameters(self):
+        self._param_section = [section for section 
+                in self.sphinx_sections 
+                if section.split(' ')[0]==':param']
+        if len(self._p0)==1:
+            self._param_lines = self._param_section[0].split('\n')
+            self._odd = [line for i, line in
+                    enumerate(self._param_lines) if i%2==1]
+            self._even = [line for i, line in
+                    enumerate(self._param_lines) if i%2==0]
+            self._pairs = zip(self._odd, self._even)
+
+    def _get_returns(self):
+        self._returns = [section for section 
+                in self.sphinx_sections
+                        if section.split(' ')[0]==':returns:']
+
