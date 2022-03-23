@@ -14,18 +14,23 @@ class FunctionInfo:
     def __init__(self, function_def: ast.FunctionDef, module:str,
             context:str, class_name:str = None):
 
-        if class_name:
-            class_ = f'{class_name}::'
-        else:
-            class_ = ''
-
         self.ast = function_def
-        self.name = f'{context}.{module}::{class_}{self.ast.name}'
+        self.module = module
+        self.context = context
+        self.class_name = class_name
+        if self.class_name:
+            self.class_ = f'{class_name}::'
+        else:
+            self.class_ = ''
+
+        self.name = f'{self.context}.{self.module}::{self.class_}{self.ast.name}'
         self.args = [a.arg for a in self.ast.args.args]
+
         self.annotations = [
             AnnotationInfo(a.annotation) for a in self.ast.args.args
         ]
         self.argdict = dict(zip(self.args, [x.txt for x in self.annotations]))
+
         self.docstring = ast.get_docstring(self.ast)
         self.returns = AnnotationInfo(self.ast.returns).txt
 
@@ -78,7 +83,6 @@ class DocstringInfo:
 
     def _get_parameters(self):
         self.params = []
-        self.param_errors = None
         self._param_section = [section for section 
                 in self.sphinx_sections 
                 if section.split(' ')[0]==':param']
@@ -96,4 +100,11 @@ class DocstringInfo:
         self._returns = [section for section 
                 in self.sphinx_sections
                         if section.split(' ')[0]==':returns:']
+        if self._returns:
+            self._returns = self._returns[0]
+            hint = self._returns.split(':')[-1].strip()
+            desc = self._returns.split(':')[2].strip()
+            self.returns = {'hint':hint, 'desc':desc}
+        else:
+            self._returns, self.returns = None, None
 
