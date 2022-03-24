@@ -44,14 +44,18 @@ def get_func_name_list(module_filepath, context):
 
     return functions
 
-def get_docstring_problems(folder, start=os.getcwd()):
+def get_docstring_problems(folder, start=os.getcwd(), ignore_init=True):
 
     funcs = list_funcs_recursively(start, folder, [])
+
+    if ignore_init:
+        funcs = [f for f in funcs
+                if f.ast.name!='__init__']
 
     full_list = [(p, f, f.module, f.context) for f in funcs
             for p in Linter(f).problems]
 
-    df = pd.DataFrame(full_list)
-    df.columns = ['problem','function','module','context']
+    df = pd.DataFrame(full_list, 
+            columns = ['problem','function','module','context'])
 
     return df
