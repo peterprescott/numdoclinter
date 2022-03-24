@@ -1,30 +1,9 @@
-import os
+from sphinx.ext.napoleon import NumpyDocstring
+from numdoclinter import parse, actions, linter
 
-from numdoclinter import parse
+start = '/home/peterprescott/90poe/data-science-common'
+folder = 'data_science_common'
 
+funcs = actions.list_files_recursively(start, folder, [])
 
-def list_files_recursively(start, folder, func_list):
-
-    os.chdir(os.path.join(start,folder))
-    location = os.getcwd()
-
-    modules = [m for m in os.listdir() if 
-            (os.path.isfile(m) and m.split('.')[-1] == 'py')]
-
-    for m in modules:
-        func_list.extend(parse.get_func_name_list(m, location))
-    
-
-    folders = [f for f in os.listdir()
-            if os.path.isdir(f)]
-
-    for f in folders:
-        list_files_recursively(location, f, func_list)
-
-    return func_list 
-
-os.chdir('/home/peterprescott/90poe/data-science-common')
-
-x = list_files_recursively('.', 'data_science_common', [])
-
-x[:10]
+len([f for f in funcs if linter.Linter(f).problems])

@@ -47,6 +47,7 @@ class FunctionInfo:
 class AnnotationInfo:
     def __init__(self, annotation_info: Union[ast.Name, ast.Attribute, ast.Subscript]):
         self.ast = annotation_info
+        self.annotation_error = None
         try:
             if type(self.ast) == ast.Subscript:
                 if hasattr(self.ast.slice, "dims"):
@@ -54,15 +55,20 @@ class AnnotationInfo:
                         AnnotationInfo(x).txt for x in self.ast.slice.dims]
                     )}]"""
                 else:
-                    self.txt = f"{self.ast.value.id}[{self.ast.slice.id}]"
+                    try:
+                        x = self.ast.slice.value.id
+                    except:
+                        x = self.ast.slice.id
+                    self.txt = f"{self.ast.value.id}[{x}]"
             elif type(self.ast) == ast.Name:
                 self.txt = self.ast.id
             elif type(self.ast) == ast.Attribute:
                 self.txt = f"{self.ast.value.id}.{self.ast.attr}"
             else:
                 self.txt = None
-        except:
+        except Exception as e:
             self.txt = None
+            self.annotation_error = e
 
 
 class DocstringInfo:

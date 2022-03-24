@@ -1,7 +1,11 @@
 import ast
-from parse import FunctionInfo
+import os
+
+from numdoclinter.parse import FunctionInfo
 
 
+# TODO: change func name.
+# this actually gets a list of functions in files in nested folders
 def list_files_recursively(start, folder, func_list):
 
     os.chdir(os.path.join(start,folder))
@@ -11,7 +15,7 @@ def list_files_recursively(start, folder, func_list):
             (os.path.isfile(m) and m.split('.')[-1] == 'py')]
 
     for m in modules:
-        func_list.extend(parse.get_func_name_list(m, location))
+        func_list.extend(get_func_name_list(m, location))
     
 
     folders = [f for f in os.listdir()

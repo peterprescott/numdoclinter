@@ -6,16 +6,25 @@ def no_docstring(func):
     return not bool(func.docstring)
 
 def no_description_in_docstring(func):
-    return not bool(func.docinfo.description)
+    if func.docinfo:
+        return not bool(func.docinfo.description)
+    else:
+        return False
 
 def signature_params_not_same_as_docstring(func):
-    signature_params = [p for p in func.args if 'self'!=p]
-    docstring_params = [d['name'] for d in func.docinfo.params]
-    return not bool(signature_params==docstring_params)
+    if func.docinfo:
+        signature_params = [p for p in func.args if 'self'!=p]
+        docstring_params = [d['name'] for d in func.docinfo.params]
+        return not bool(signature_params==docstring_params)
+    else:
+        return False
 
 def not_all_docstring_params_have_desc(func):
-    return not all([bool(d['desc'] for d
-        in func.docinfo.params])
+    if func.docinfo:
+        return not all([bool(d['desc']) for d
+            in func.docinfo.params])
+    else:
+        return False
 
 def defaults_not_in_docstring(func):
     # TODO:
@@ -42,12 +51,14 @@ def type_hints_missing_from_signature(func):
         in func.argdict.items() if k!='self'])
 
 def docstring_type_hints_not_match_signature(func):
-    if all([bool(v) for k,v
-        in func.argdict.items() if k!='self']):
-        return not (
-            [v for k,v in func.argdict.items() 
-                if k!='self']==[d['hint'] for d
-                    in func.docinfo.params])
+    if func.docinfo and all([bool(v) for k,v
+            in func.argdict.items() if k!='self']):
+            return not (
+                [v for k,v in func.argdict.items() 
+                    if k!='self']==[d['hint'] for d
+                        in func.docinfo.params])
+    else:
+        return False
 
 
 class Linter:
@@ -58,10 +69,8 @@ class Linter:
         self.tests = [
                  no_docstring,
                  no_description_in_docstring,
-                 signature_params_not_all_in_docstring,
-                 docstring_params_not_all_in_signature,
+                 signature_params_not_same_as_docstring,
                  not_all_docstring_params_have_desc,
-                 params_docstring_order_different,
                  defaults_not_in_docstring,
                  return_in_signature_missing_from_docstring,
                  return_in_docstring_missing_from_signature,
@@ -69,4 +78,4 @@ class Linter:
                  docstring_type_hints_not_match_signature
                 ]
         self.problems = [t.__name__ for t in self.tests
-                if not t(self.func)]
+                if t(self.func)]
