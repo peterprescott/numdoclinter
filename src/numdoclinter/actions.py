@@ -1,12 +1,13 @@
 import ast
 import os
 
+import pandas as pd
+
+from numdoclinter.linter import Linter
 from numdoclinter.parse import FunctionInfo
 
 
-# TODO: change func name.
-# this actually gets a list of functions in files in nested folders
-def list_files_recursively(start, folder, func_list):
+def list_funcs_recursively(start, folder, func_list):
 
     os.chdir(os.path.join(start,folder))
     location = os.getcwd()
@@ -22,7 +23,7 @@ def list_files_recursively(start, folder, func_list):
             if os.path.isdir(f)]
 
     for f in folders:
-        list_files_recursively(location, f, func_list)
+        list_funcs_recursively(location, f, func_list)
 
     return func_list 
 
@@ -43,3 +44,14 @@ def get_func_name_list(module_filepath, context):
 
     return functions
 
+def get_docstring_problems(folder, start=os.getcwd()):
+
+    funcs = list_funcs_recursively(start, folder, [])
+
+    full_list = [(p, f, f.module, f.context) for f in funcs
+            for p in Linter(f).problems]
+
+    df = pd.DataFrame(full_list)
+    df.columns = ['problem','function','module','context']
+
+    return df
