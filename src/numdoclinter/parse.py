@@ -60,23 +60,32 @@ class AnnotationInfo:
         self.ast = annotation_info
         self.annotation_error = None
         try:
-            if type(self.ast) == ast.Subscript:
-                if hasattr(self.ast.slice, "dims"):
-                    self.txt = f"""{self.ast.value.id}[{', '.join([
-                        AnnotationInfo(x).txt for x in self.ast.slice.dims]
-                    )}]"""
-                else:
-                    try:
-                        x = self.ast.slice.value.id
-                    except:
-                        x = self.ast.slice.id
-                    self.txt = f"{self.ast.value.id}[{x}]"
-            elif type(self.ast) == ast.Name:
+            if type(self.ast) == ast.Name:
                 self.txt = self.ast.id
-            elif type(self.ast) == ast.Attribute:
-                self.txt = f"{self.ast.value.id}.{self.ast.attr}"
             elif type(self.ast) == ast.Str:
                 self.txt = self.ast.s
+            elif type(self.ast) == ast.Attribute:
+                self.annotation_error = AnnotationInfo(self.ast.value).annotation_error
+                self.txt = f'{AnnotationInfo(self.ast.value).txt}.{self.ast.attr}'
+            elif type(self.ast) == ast.Tuple:
+
+
+                if hasattr(self.ast, 'value'):
+                    self.annotation_error = [AnnotationInfo(x).annotation_error
+                        for x in self.ast.value.elts]
+                    self.txt = ','.join([AnnotationInfo(x).txt
+                        for x in self.ast.value.elts])
+                else:
+                     self.annotation_error = [AnnotationInfo(x).annotation_error
+                        for x in self.ast.elts]
+
+                     self.txt = ','.join([AnnotationInfo(x).txt
+                        for x in self.ast.elts])
+                   
+            elif type(self.ast) == ast.Subscript:
+                self.annotation_error = AnnotationInfo(self.ast.slice.value).annotation_error
+
+                self.txt = f'{self.ast.value.id}[{AnnotationInfo(self.ast.slice.value).txt}]'
             else:
                 self.txt = None
         except Exception as e:
