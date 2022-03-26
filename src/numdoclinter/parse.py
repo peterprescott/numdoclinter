@@ -54,8 +54,16 @@ class FunctionInfo:
 class AnnotationInfo:
     def __init__(
         self,
-        annotation_info: Union[ast.Name, ast.Attribute, ast.Subscript,
-            ast.Str],
+        annotation_info: Union[
+            ast.Name,
+            ast.Str,
+            ast.Attribute,
+            ast.Tuple,
+            ast.List,
+            ast.Subscript,
+            ast.NameConstant,
+            ast.Ellipsis,
+        ],
     ):
         self.ast = annotation_info
         self.annotation_error = None
@@ -65,29 +73,55 @@ class AnnotationInfo:
             elif type(self.ast) == ast.Str:
                 self.txt = self.ast.s
             elif type(self.ast) == ast.Attribute:
-                self.annotation_error = AnnotationInfo(self.ast.value).annotation_error
-                self.txt = f'{AnnotationInfo(self.ast.value).txt}.{self.ast.attr}'
-            elif type(self.ast) == ast.Tuple:
+                self.annotation_error = AnnotationInfo(
+                    self.ast.value
+                ).annotation_error
 
+                self.txt = f"{AnnotationInfo(self.ast.value).txt}.{self.ast.attr}"
+            elif (type(self.ast) == ast.Tuple) or (
+                type(self.ast) == ast.List
+            ):
+                error_list = [
+                    AnnotationInfo(x).annotation_error
+                    for x in self.ast.elts
+                    if AnnotationInfo(x).annotation_error
+                ]
+                if error_list:
+                    self.annotation_error = ",".join([error_list])
 
-                if hasattr(self.ast, 'value'):
-                    self.annotation_error = [AnnotationInfo(x).annotation_error
-                        for x in self.ast.value.elts]
-                    self.txt = ','.join([AnnotationInfo(x).txt
-                        for x in self.ast.value.elts])
-                else:
-                     self.annotation_error = [AnnotationInfo(x).annotation_error
-                        for x in self.ast.elts]
+                self.txt = ",".join(
+                    [
+                        AnnotationInfo(x).txt
+                        for x in self.ast.elts
+                        if AnnotationInfo(x).txt
+                    ]
+                )
 
-                     self.txt = ','.join([AnnotationInfo(x).txt
-                        for x in self.ast.elts])
-                   
             elif type(self.ast) == ast.Subscript:
-                self.annotation_error = AnnotationInfo(self.ast.slice.value).annotation_error
+                if hasattr(self.ast.slice, "value"):
+                    self.annotation_error = AnnotationInfo(
+                        self.ast.slice.value
+                    ).annotation_error
 
-                self.txt = f'{self.ast.value.id}[{AnnotationInfo(self.ast.slice.value).txt}]'
-            else:
+                    self.txt = (
+                        f"{self.ast.value.id}"
+                        f"[{AnnotationInfo(self.ast.slice.value).txt}]"
+                    )
+                else:
+                    self.txt = (
+                        f"{self.ast.value.id}"
+                        f"[{AnnotationInfo(self.ast.slice.lower).txt}:"
+                        f"{AnnotationInfo(self.ast.slice.upper).txt}]"
+                    )
+            elif type(self.ast) == ast.NameConstant:
+                self.txt = "None"  # this is true in one case, not sure about the others
+            elif type(self.ast) == type(None):
                 self.txt = None
+            elif type(self.ast) == ast.Ellipsis:
+                self.txt = "..."
+            else:
+                # unknown type
+                self.txt = f"?!{type(self.ast)}"
         except Exception as e:
             self.txt = None
             self.annotation_error = e
