@@ -5,7 +5,7 @@ expressions).
 """
 
 import ast
-from typing import Union
+from typing import Union, Optional
 
 from sphinx.ext.napoleon import NumpyDocstring
 
@@ -16,7 +16,7 @@ class FunctionInfo:
         function_def: ast.FunctionDef,
         module: str,
         context: str,
-        class_name: str = None,
+        class_name: Optional[str] = None,
     ):
 
         self.ast = function_def
@@ -29,11 +29,18 @@ class FunctionInfo:
             self.class_ = ""
 
         self.name = f"{self.class_}{self.ast.name}"
-        self.args = [a.arg for a in self.ast.args.args]
 
+        self.args = [a.arg for a in self.ast.args.args]
         self.annotations = [
             AnnotationInfo(a.annotation) for a in self.ast.args.args
         ]
+
+        vararg, kwarg = self.ast.args.vararg, self.ast.args.kwarg
+        for a in vararg, kwarg:
+            if a:
+                self.args.append(a.arg)
+                self.annotations.append(AnnotationInfo(a.annotation))
+
         self.argdict = dict(
             zip(self.args, [x.txt for x in self.annotations])
         )
@@ -89,7 +96,7 @@ class AnnotationInfo:
                 if error_list:
                     self.annotation_error = ",".join([error_list])
 
-                self.txt = ",".join(
+                self.txt = ", ".join(
                     [
                         AnnotationInfo(x).txt
                         for x in self.ast.elts
