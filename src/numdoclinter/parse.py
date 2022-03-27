@@ -23,13 +23,16 @@ class FunctionInfo:
         self.module = module
         self.context = context
         self.class_name = class_name
+
         if self.class_name:
-            self.class_ = f"{class_name}::"
+            self.name = f"{class_name}::{self.ast.name}"
         else:
-            self.class_ = ""
+            self.name = self.ast.name
 
-        self.name = f"{self.class_}{self.ast.name}"
+        self._parse_args()
+        self._parse_docstring()
 
+    def _parse_args(self):
         self.args = [a.arg for a in self.ast.args.args]
         self.annotations = [
             AnnotationInfo(a.annotation) for a in self.ast.args.args
@@ -45,6 +48,7 @@ class FunctionInfo:
             zip(self.args, [x.txt for x in self.annotations])
         )
 
+    def _parse_docstring(self):
         self.docstring = ast.get_docstring(self.ast)
         self.returns = AnnotationInfo(self.ast.returns).txt
 
@@ -127,7 +131,7 @@ class AnnotationInfo:
             elif type(self.ast) == ast.Ellipsis:
                 self.txt = "..."
             else:
-                # unknown type
+                # ast type not yet dealt with
                 self.txt = f"?!{type(self.ast)}"
         except Exception as e:
             self.txt = None
