@@ -52,8 +52,45 @@ def return_not_in_docstring(x:int) -> int:
     x: int
         Some integer.
     """
-    return 1
+    return x
 
+
+def return_not_in_signature(x:int):
+    """
+    Function with return in docstring but not signature.
+
+    Parameters
+    ----------
+    x: int
+        Some integer.
+
+    Returns
+    -------
+    int
+        Returns whatever number was passed into function.
+    """
+    return x
+
+
+def without_hints_in_signature(x):
+    """
+    No hints in signature
+
+    Parameters
+    ----------
+    x
+    """
+    pass
+
+
+def docstring_hints_not_match_signature(x:int):
+    """
+    Parameters
+    ----------
+    x: str
+      But according to signature an int.
+    """
+    pass
 
 
 def get_FunctionInfo_object(func):
@@ -101,3 +138,24 @@ def test_return_in_signature_missing_from_docstring():
             return_not_in_docstring)
     assert linter.return_in_signature_missing_from_docstring(
             func_with_no_docstring_return)
+
+
+def test_return_in_docstring_missing_from_signature():
+    func_with_no_signature_return = get_FunctionInfo_object(
+            return_not_in_signature)
+    assert linter.return_in_docstring_missing_from_signature(
+            func_with_no_signature_return)
+
+
+def test_type_hints_missing_from_signature():
+    func_with_hints_missing_from_signature = get_FunctionInfo_object(
+            without_hints_in_signature)
+    assert linter.type_hints_missing_from_signature(
+            func_with_hints_missing_from_signature)
+
+
+def test_docstring_type_hints_not_match_signature():
+    func_with_contradictory_hints = get_FunctionInfo_object(
+            docstring_hints_not_match_signature)
+    assert linter.docstring_type_hints_not_match_signature(
+            func_with_contradictory_hints)
