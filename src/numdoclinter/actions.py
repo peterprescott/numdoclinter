@@ -125,7 +125,7 @@ def run_from_cli(
     ]
     print(f"... with {len(full_list)} docstring problems.")
 
-    if list_problems:
+    if echo_problems:
         [
             print(f"{os.path.join(x[3],x[2])}\n{x[1]}()\n{x[0]}\n")
             for x in full_list
@@ -145,6 +145,11 @@ def run_from_cli(
         print(f"List saved as {csv_name}.")
 
 
+def main():
+    fire.Fire(run_from_cli)
+
+
+
 if __name__ == "__main__":
 
-    fire.Fire(run_from_cli)
+    main()
