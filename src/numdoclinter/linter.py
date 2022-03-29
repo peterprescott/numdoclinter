@@ -94,7 +94,9 @@ def signature_params_not_same_as_docstring(func: FunctionInfo) -> bool:
     if func.docinfo:
         signature_params = [p for p in func.args if p not in IGNORED_PARAMS]
         docstring_params = [
-            d["name"] for d in func.docinfo.params if d["name"] not in IGNORED_PARAMS
+            d["name"]
+            for d in func.docinfo.params
+            if d["name"] not in IGNORED_PARAMS
         ]
         return not bool(signature_params == docstring_params)
     else:
@@ -138,7 +140,7 @@ def defaults_not_in_docstring(func: FunctionInfo) -> bool:
     bool
         Whether the function has the problem described in this
         function's name.
- 
+
     """
     # TODO:
     # will require parsing defaults from signature ast
@@ -161,10 +163,12 @@ def return_in_signature_missing_from_docstring(func: FunctionInfo) -> bool:
     bool
         Whether the function has the problem described in this
         function's name.
- 
+
     """
     if func.returns:
-        return not (hasattr(func.docinfo, "returns") and bool(func.docinfo.returns))
+        return not (
+            hasattr(func.docinfo, "returns") and bool(func.docinfo.returns)
+        )
     else:
         return False
 
@@ -184,7 +188,7 @@ def return_in_docstring_missing_from_signature(func: FunctionInfo) -> bool:
     bool
         Whether the function has the problem described in this
         function's name.
- 
+
     """
     if hasattr(func.docinfo, "returns") and bool(func.docinfo.returns):
         return not bool(func.returns)
@@ -207,9 +211,9 @@ def type_hints_missing_from_signature(func: FunctionInfo) -> bool:
     bool
         Whether the function has the problem described in this
         function's name.
- 
+
     """
- 
+
     return not all(
         [bool(v) for k, v in func.argdict.items() if k not in IGNORED_PARAMS]
     )
@@ -230,7 +234,7 @@ def docstring_type_hints_not_match_signature(func: FunctionInfo) -> bool:
     bool
         Whether the function has the problem described in this
         function's name.
- 
+
     """
 
     if func.docinfo and all(

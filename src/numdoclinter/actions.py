@@ -41,7 +41,7 @@ def list_funcs_recursively(
         functions added to the func_list initially passed in.
     """
 
-    if func_list == None:
+    if func_list is None:
         func_list = []
 
     os.chdir(context)
@@ -51,7 +51,9 @@ def list_funcs_recursively(
     location = os.getcwd()
 
     modules = [
-        m for m in os.listdir() if (os.path.isfile(m) and m.split(".")[-1] == "py")
+        m
+        for m in os.listdir()
+        if (os.path.isfile(m) and m.split(".")[-1] == "py")
     ]
 
     for m in modules:
@@ -131,9 +133,15 @@ def get_docstring_problems(
     if ignore_init:
         funcs = [f for f in funcs if f.ast.name != "__init__"]
 
-    full_list = [(p, f, f.module, f.context) for f in funcs for p in Linter(f).problems]
+    full_list = [
+        (p, f, f.module, f.context)
+        for f in funcs
+        for p in Linter(f).problems
+    ]
 
-    df = pd.DataFrame(full_list, columns=["problem", "function", "module", "context"])
+    df = pd.DataFrame(
+        full_list, columns=["problem", "function", "module", "context"]
+    )
 
     return df
 
@@ -145,9 +153,9 @@ def run_from_cli(
     echo_problems: bool = True,
 ):
     """
-    Check whether the docstrings and signature of the functions within the specified
-    package (or rather the specified folder and its
-    nested subfolders) conform to Numpy Style.
+    Check whether the docstrings and signature of the functions within
+    the specified package (or rather the specified folder and its nested
+    subfolders) conform to Numpy Style.
 
     Parameters
     ----------
@@ -180,7 +188,10 @@ def run_from_cli(
     print(f"... with {len(full_list)} docstring problems.")
 
     if echo_problems:
-        [print(f"{os.path.join(x[3],x[2])}\n{x[1]}()\n{x[0]}\n") for x in full_list]
+        [
+            print(f"{os.path.join(x[3],x[2])}\n{x[1]}()\n{x[0]}\n")
+            for x in full_list
+        ]
 
     print(f"Summary: {len(funcs)} functions, {len(full_list)} problems.")
 

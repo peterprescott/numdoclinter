@@ -141,7 +141,9 @@ class AnnotationInfo:
                     self.ast.value
                 ).annotation_error
 
-                self.txt = f"{AnnotationInfo(self.ast.value).txt}.{self.ast.attr}"
+                self.txt = (
+                    f"{AnnotationInfo(self.ast.value).txt}.{self.ast.attr}"
+                )
             elif (type(self.ast) == ast.Tuple) or (
                 type(self.ast) == ast.List
             ):
@@ -178,7 +180,7 @@ class AnnotationInfo:
                         f"{AnnotationInfo(self.ast.slice.upper).txt}]"
                     )
             elif type(self.ast) == ast.NameConstant:
-                self.txt = "None"  # this is true in one case, not sure about the others
+                self.txt = "None"
             elif type(self.ast) == type(None):
                 self.txt = None
             elif type(self.ast) == ast.Ellipsis:
@@ -227,9 +229,7 @@ class DocstringInfo:
             if section.split(" ")[0] == ":param"
         ]
         if len(self._param_section) == 1:
-            self._param_lines = self._param_section[0].split(":param ")[
-                1:
-            ]
+            self._param_lines = self._param_section[0].split(":param ")[1:]
             for p in self._param_lines:
                 splits = p.split(":")
                 name = splits[0]
