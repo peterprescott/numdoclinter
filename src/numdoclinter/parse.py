@@ -1,7 +1,9 @@
 """
-A module that uses the Python abstract syntax grammar to parse the
-necessary information (which should be more robust that using regular
-expressions).
+This module contains the main FunctionInfo class used for handling
+functions. This makes use of the AnnotationInfo class for parsing
+signature type hints, and the DocstringInfo class for parsing
+docstrings. These in turn make use of the built-in ast library, and the
+Sphinx Napoleon extension.
 """
 
 import ast
@@ -11,6 +13,13 @@ from sphinx.ext.napoleon import NumpyDocstring
 
 
 class FunctionInfo:
+    """
+    This is how we extract the information we want about the functions
+    we are interested in, without running their code (which could be
+    unsafe), or trying to do fancy regex on their source (which might
+    not be sufficiently robust).
+    """
+
     def __init__(
         self,
         function_def: ast.FunctionDef,
@@ -18,6 +27,21 @@ class FunctionInfo:
         context: str,
         class_name: Optional[str] = None,
     ):
+        """
+        Initialize the FunctionInfo object.
+
+        Parameters
+        ----------
+        function_def: ast.FunctionDef
+            The abstract syntax tree object for the function definition.
+        module: str
+            The name of the module in which the function was found.
+        context: str
+            The filepath of the module in which the function was found.
+        class_name: Optional[str]
+            If the function is a method, the name of the class in which
+            it is defined.
+        """
 
         self.ast = function_def
         self.module = module
@@ -29,10 +53,15 @@ class FunctionInfo:
         else:
             self.name = self.ast.name
 
-        self._parse_args()
+        self._parse_signature()
         self._parse_docstring()
 
-    def _parse_args(self):
+    def _parse_signature(self):
+        """
+        Parse the signature of the function, and get its type hints using
+        the AnnotationInfo object.
+        """
+
         self.args = [a.arg for a in self.ast.args.args]
         self.annotations = [
             AnnotationInfo(a.annotation) for a in self.ast.args.args
@@ -49,6 +78,10 @@ class FunctionInfo:
         )
 
     def _parse_docstring(self):
+        """
+        Parse the docstring of the function using the DocstringInfo
+        object.
+        """
         self.docstring = ast.get_docstring(self.ast)
         self.returns = AnnotationInfo(self.ast.returns).txt
 
@@ -58,6 +91,9 @@ class FunctionInfo:
             self.docinfo = None
 
     def __repr__(self):
+        """
+        Represent the FunctionInfo object with the function's name.
+        """
 
         return self.name
 
@@ -76,6 +112,23 @@ class AnnotationInfo:
             ast.Ellipsis,
         ],
     ):
+        """
+        Recursively unpacks the ast Annotation into the text of its type
+        hint, based on the specific behaviour of the annotation type.
+
+        Parameters
+        ----------
+        annotation_info: Union[
+            ast.Name,
+            ast.Str,
+            ast.Attribute,
+            ast.Tuple,
+            ast.List,
+            ast.Subscript,
+            ast.NameConstant,
+            ast.Ellipsis,
+        ]
+        """
         self.ast = annotation_info
         self.annotation_error = None
         try:
@@ -140,6 +193,12 @@ class AnnotationInfo:
 
 class DocstringInfo:
     def __init__(self, raw_docstring: str):
+        """
+        Uses the sphinx.ext.napoleon.NumpyDocstring to parse the lines
+        of the docstring into a somewhat more predictable format, before
+        then extracting the information into a form more suitable for
+        our use.
+        """
         self.raw = raw_docstring
         self.sphinx = NumpyDocstring(self.raw).lines()
         self.sphinx_sections = "\n".join(self.sphinx).split("\n\n")
@@ -148,6 +207,9 @@ class DocstringInfo:
         self._get_returns()
 
     def _get_description(self):
+        """
+        Try to get initial docstring description.
+        """
         try:
             self.description = self.sphinx_sections[0]
             assert self.description[0] != ":"
@@ -155,6 +217,9 @@ class DocstringInfo:
             self.description = None
 
     def _get_parameters(self):
+        """
+        For each docstring parameter, get name, description and type hint.
+        """
         self.params = []
         self._param_section = [
             section
@@ -175,6 +240,9 @@ class DocstringInfo:
                 )
 
     def _get_returns(self):
+        """
+        Get docstring returns hint and description.
+        """
         self._returns = [
             section
             for section in self.sphinx_sections
