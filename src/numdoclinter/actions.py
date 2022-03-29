@@ -1,3 +1,7 @@
+"""
+This module provides the active verbs for the package.
+"""
+
 import ast
 import os
 from typing import List, Optional
@@ -10,28 +14,48 @@ from numdoclinter.parse import FunctionInfo
 
 
 def list_funcs_recursively(
-    start: str,
+    context: str,
     folder: str,
     func_list: Optional[List[FunctionInfo]] = None,
 ) -> List[FunctionInfo]:
+    """
+    Add to our function list the functions in the modules in the given
+    folder, and recursively continue into all nested subfolders.
+
+    Parameters
+    ----------
+    context: str
+        The working directory in which the function is called.
+    folder: str
+        The directory in which we want to list all the functions of all
+        the modules.
+    func_list: Optional[List[FunctionInfo]]
+        The list of FunctionInfo objects to which we will recursively add new
+        functions as we find them. If None, then creates a new empty
+        list.
+
+    Returns
+    -------
+    List[FunctionInfo]
+        The list of FunctionInfo objects consisting of newly found
+        functions added to the func_list initially passed in.
+    """
 
     if func_list == None:
         func_list = []
 
-    os.chdir(start)
+    os.chdir(context)
     starting_location = os.getcwd()
 
-    os.chdir(os.path.join(start, folder))
+    os.chdir(os.path.join(context, folder))
     location = os.getcwd()
 
     modules = [
-        m
-        for m in os.listdir()
-        if (os.path.isfile(m) and m.split(".")[-1] == "py")
+        m for m in os.listdir() if (os.path.isfile(m) and m.split(".")[-1] == "py")
     ]
 
     for m in modules:
-        func_list.extend(get_func_name_list(m, location))
+        func_list.extend(get_func_list(m, location))
 
     folders = [f for f in os.listdir() if os.path.isdir(f)]
 
@@ -42,11 +66,26 @@ def list_funcs_recursively(
     return func_list
 
 
-def get_func_name_list(module_filepath, context):
-    with open(module_filepath, "r") as file:
+def get_func_list(module_name: str, context: str) -> List[FunctionInfo]:
+    """
+    Get FunctionInfo for all functions in specified module.
+
+    Parameters
+    ----------
+    module_name: str
+        The name of the module.
+    context: str
+        The filepath of the directory in which the module is found.
+
+    Returns
+    -------
+    List[FunctionInfo]
+        List containing info for all functions in the module.
+    """
+    with open(module_name, "r") as file:
         tree = ast.parse(file.read())
 
-    module = module_filepath.split(".")[0]
+    module = module_name.split(".")[0]
 
     functions = [
         FunctionInfo(f, module, context)
@@ -66,22 +105,35 @@ def get_func_name_list(module_filepath, context):
     return functions
 
 
-def get_docstring_problems(folder, start=os.getcwd(), ignore_init=True):
+def get_docstring_problems(
+    folder: str, context: str = os.getcwd(), ignore_init: bool = True
+) -> pd.DataFrame:
+    """
+    Get docstring problems and return a dataframe.
 
-    funcs = list_funcs_recursively(start, folder, [])
+    Parameters
+    ----------
+    folder : str
+        The name of the folder to search for docstring problems.
+    context : str
+        The directory in which the folder is found.
+    ignore_init : bool
+        Whether to ignore __init__ functions.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe of docstring problems.
+    """
+
+    funcs = list_funcs_recursively(context, folder, [])
 
     if ignore_init:
         funcs = [f for f in funcs if f.ast.name != "__init__"]
 
-    full_list = [
-        (p, f, f.module, f.context)
-        for f in funcs
-        for p in Linter(f).problems
-    ]
+    full_list = [(p, f, f.module, f.context) for f in funcs for p in Linter(f).problems]
 
-    df = pd.DataFrame(
-        full_list, columns=["problem", "function", "module", "context"]
-    )
+    df = pd.DataFrame(full_list, columns=["problem", "function", "module", "context"])
 
     return df
 
@@ -93,7 +145,9 @@ def run_from_cli(
     echo_problems: bool = True,
 ):
     """
-    Run numdoclinter from CLI.
+    Check whether the docstrings and signature of the functions within the specified
+    package (or rather the specified folder and its
+    nested subfolders) conform to Numpy Style.
 
     Parameters
     ----------
@@ -126,14 +180,9 @@ def run_from_cli(
     print(f"... with {len(full_list)} docstring problems.")
 
     if echo_problems:
-        [
-            print(f"{os.path.join(x[3],x[2])}\n{x[1]}()\n{x[0]}\n")
-            for x in full_list
-        ]
+        [print(f"{os.path.join(x[3],x[2])}\n{x[1]}()\n{x[0]}\n") for x in full_list]
 
-    print(
-        f"Summary: {len(funcs)} functions, {len(full_list)} problems."
-    )
+    print(f"Summary: {len(funcs)} functions, {len(full_list)} problems.")
 
     if save_as_csv:
         df = pd.DataFrame(
@@ -146,8 +195,10 @@ def run_from_cli(
 
 
 def main():
+    """
+    Entrypoint for CLI.
+    """
     fire.Fire(run_from_cli)
-
 
 
 if __name__ == "__main__":
