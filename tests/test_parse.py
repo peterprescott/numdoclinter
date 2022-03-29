@@ -59,8 +59,7 @@ def test_AnnotationInfo():
 
     func_ast = get_func_ast(func1)
     parsed_annotations = [
-        parse.AnnotationInfo(arg.annotation).txt
-        for arg in func_ast.args.args
+        parse.AnnotationInfo(arg.annotation).txt for arg in func_ast.args.args
     ]
     assert parsed_annotations[0] == "int"
     assert parsed_annotations[1] == "str"
@@ -71,9 +70,7 @@ def test_AnnotationInfo():
 
 def test_DocstringInfo_description():
     docstring_info = get_DocstringInfo(func1)
-    assert (
-        docstring_info.description == "This is a Numpy style docstring."
-    )
+    assert docstring_info.description == "This is a Numpy style docstring."
 
 
 def test_DocstringInfo_param_descriptions():
