@@ -1,5 +1,13 @@
 # numdoclinter
 
+----------------
+
+NB: Should work with Python 3.7. May not work with later (or earlier)
+versions, as Python's abstract syntax may change from version to
+version.
+
+----------------
+
 Inspired by [`numdoclint`](https://github.com/simon-ritchie/numdoclint),
 but wanting to try a slightly different approach...
 
